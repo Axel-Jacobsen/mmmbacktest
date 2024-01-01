@@ -2,6 +2,11 @@
 
 This is a backtest server for Manifold Markets. It aims to match the original api endpoints, as defined [here](https://docs.manifold.markets/api), except with the backtest data.
 
+## TODOs
+
+[warp](https://docs.rs/warp/latest/warp/) is really really good. The server stuff is
+dead easy. So all the work will be pulling data from the backtest data, filtering it to the [api specs](https://docs.manifold.markets/api), and returning it. I can add some stuff to simulate the markets over time to test bots that are time-sensitive. Also, adding a cli arg to download / update the backtest data would be good. But, you should also be able to call this from code, not just the cli, to make backtesting easy for bots.
+
 ## How to use
 
 tbd ;)

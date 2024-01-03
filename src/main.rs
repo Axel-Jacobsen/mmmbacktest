@@ -3,9 +3,8 @@ use std::fs;
 use warp::http::StatusCode;
 use warp::Filter;
 
-mod db;
 mod data_types;
-
+mod db;
 
 fn iter_over_markets(market_json: &String) -> Vec<data_types::FullMarket> {
     let file_as_string = fs::read_to_string(market_json).unwrap();
@@ -32,10 +31,10 @@ fn iterate_over_bets(bets_dir: &String) -> Vec<data_types::Bet> {
     bets
 }
 
-
 #[tokio::main]
 async fn main() {
-    let markets = iter_over_markets(&"backtest-data/manifold-dump-markets-04082023.json".to_string());
+    let markets =
+        iter_over_markets(&"backtest-data/manifold-dump-markets-04082023.json".to_string());
 
     for market in markets {
         println!("{:?}", market);

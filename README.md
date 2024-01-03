@@ -4,8 +4,11 @@ This is a backtest server for Manifold Markets. It aims to match the original ap
 
 ## TODOs
 
-[warp](https://docs.rs/warp/latest/warp/) is really really good. The server stuff is
-dead easy. So all the work will be pulling data from the backtest data, filtering it to the [api specs](https://docs.manifold.markets/api), and returning it. I can add some stuff to simulate the markets over time to test bots that are time-sensitive. Also, adding a cli arg to download / update the backtest data would be good. But, you should also be able to call this from code, not just the cli, to make backtesting easy for bots.
+[warp](https://docs.rs/warp/latest/warp/) is really really good. The server stuff is dead easy. So all the work will be pulling data from the backtest data, filtering it to the [api specs](https://docs.manifold.markets/api), and returning it. I can add some stuff to simulate the markets over time to test bots that are time-sensitive. Also, adding a cli arg to download / update the backtest data would be good. But, you should also be able to call this from code, not just the cli, to make backtesting easy for bots.
+
+I think the best method of loading / querying data will be to copy all the data into a sqlite db. If we are space constrained, we can delete the original json values.
+
+`db.rs` will manage the sqlite connections.
 
 ## How to use
 

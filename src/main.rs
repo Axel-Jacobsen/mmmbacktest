@@ -7,9 +7,9 @@ mod db;
 mod data_types;
 
 
-fn iter_over_markets(market_json: &String) -> Vec<data_types::LiteMarket> {
+fn iter_over_markets(market_json: &String) -> Vec<data_types::FullMarket> {
     let file_as_string = fs::read_to_string(market_json).unwrap();
-    let markets: Vec<data_types::LiteMarket> = serde_json::from_str(&file_as_string).unwrap();
+    let markets: Vec<data_types::FullMarket> = serde_json::from_str(&file_as_string).unwrap();
     markets
 }
 

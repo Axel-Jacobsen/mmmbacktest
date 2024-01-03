@@ -284,7 +284,7 @@ pub struct FullMarket {
 
     /// string description without formatting, images, or embeds
     #[serde(rename = "textDescription")]
-    text_description: String,
+    text_description: Option<String>,
 
     /// groups which the market is a part of
     #[serde(rename = "groupSlugs")]

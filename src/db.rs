@@ -89,7 +89,7 @@ fn create_bet_table(conn: &Connection) -> Result<()> {
             visibility TEXT,
             challenge_slug TEXT,
             reply_to_comment_id TEXT,
-            limit_props TEXT,
+            limit_props TEXT
         )",
         [],
     )?;
@@ -313,7 +313,6 @@ fn init_market_table(conn: &mut Connection) -> Result<usize> {
 
 fn init_bet_table(conn: &mut Connection) -> Result<usize> {
     if !table_exists(&conn, "bets")? {
-        println!("creating bets table");
         create_bet_table(&conn)?;
     }
 

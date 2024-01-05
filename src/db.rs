@@ -224,39 +224,6 @@ pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> 
     Ok(markets.len())
 }
 
-fn create_bets_table(conn: &Connection) -> Result<()> {
-    conn.execute(
-        "CREATE TABLE Bet (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            user_avatar_url TEXT,
-            user_name TEXT,
-            user_username TEXT,
-            contract_id TEXT NOT NULL,
-            answer_id TEXT,
-            created_time INTEGER NOT NULL,
-            amount REAL NOT NULL,
-            loan_amount REAL,
-            outcome TEXT NOT NULL,
-            shares REAL NOT NULL,
-            shares_by_outcome TEXT,
-            prob_before REAL NOT NULL,
-            prob_after REAL NOT NULL,
-            fees TEXT,
-            is_api INTEGER,
-            is_ante INTEGER NOT NULL,
-            is_redemption INTEGER NOT NULL,
-            is_challenge INTEGER NOT NULL,
-            visibility TEXT NOT NULL,
-            challenge_slug TEXT,
-            reply_to_comment_id TEXT,
-            limit_props TEXT
-        );",
-        [],
-    )?;
-    Ok(())
-}
-
 fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
     let mut stmt = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?1")?;
     let exists = stmt.exists(params![table_name])?;

@@ -31,25 +31,27 @@ fn iterate_over_bets(bets_dir: &String) -> Vec<data_types::Bet> {
 
 #[tokio::main]
 async fn main() {
-    let conn = db::setup_db();
-
-    return;
+    let mut conn = db::setup_db();
 
     let markets =
         iter_over_markets(&"backtest-data/manifold-dump-markets-04082023.json".to_string());
+    let lite_markets: Vec<data_types::LiteMarket> =
+        markets.iter().map(|fm| fm.lite_market.clone()).collect();
+
+    db::bulk_insert_markets(&mut conn, &lite_markets).unwrap();
 
     println!("found {:?} markets", markets.len());
 
-    let bets = iterate_over_bets(&"backtest-data/bets".to_string());
+    // let bets = iterate_over_bets(&"backtest-data/bets".to_string());
 
-    println!("found {:?} bets", bets.len());
+    // println!("found {:?} bets", bets.len());
 
-    let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
-    let base = warp::path("v0")
-        .and(warp::path::end())
-        .map(|| StatusCode::NOT_IMPLEMENTED);
+    // let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
+    // let base = warp::path("v0")
+    //     .and(warp::path::end())
+    //     .map(|| StatusCode::NOT_IMPLEMENTED);
 
-    let routes = root.or(base);
+    // let routes = root.or(base);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    // warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

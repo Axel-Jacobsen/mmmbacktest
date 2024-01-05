@@ -17,7 +17,7 @@ use crate::data_types::{Bet, FullMarket, LiteMarket};
 // fine.
 
 fn get_db_connection() -> Result<Connection> {
-    Connection::open("my_database.db")
+    Connection::open("mmmbacktest.db")
 }
 
 fn create_bet_table(conn: &Connection) -> Result<()> {
@@ -87,7 +87,7 @@ fn create_litemarket_table(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-fn bulk_insert_markets(conn: &mut Connection, markets: Vec<LiteMarket>) -> Result<()> {
+pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> Result<()> {
     let stmt_str = "INSERT INTO LiteMarket (
         id, creator_username, creator_name, creator_avatar_url, close_time,
         created_time, question, url, outcome_type, mechanism, probability,

@@ -54,7 +54,7 @@ fn create_bet_table(conn: &Connection) -> Result<()> {
 
 fn create_litemarket_table(conn: &Connection) -> Result<()> {
     conn.execute(
-        "CREATE TABLE LiteMarket (
+        "CREATE TABLE markets (
             id TEXT PRIMARY KEY,
             creator_username TEXT NOT NULL,
             creator_name TEXT NOT NULL,
@@ -88,7 +88,7 @@ fn create_litemarket_table(conn: &Connection) -> Result<()> {
 }
 
 pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> Result<()> {
-    let stmt_str = "INSERT INTO LiteMarket (
+    let stmt_str = "INSERT INTO markets (
         id, creator_username, creator_name, creator_avatar_url, close_time,
         created_time, question, url, outcome_type, mechanism, probability,
         pool, p, total_liquidity, value, min, max, is_log_scale, volume,

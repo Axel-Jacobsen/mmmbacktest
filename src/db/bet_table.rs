@@ -1,5 +1,29 @@
 use crate::data_types::Bet;
+use crate::db::db_common::*;
+use log::debug;
 use rusqlite::{params, Connection, Result};
+use std::fs;
+
+fn iter_over_bets(bets_dir: &str) -> impl Iterator<Item = Vec<Bet>> {
+    let paths = fs::read_dir(bets_dir).unwrap_or_else(|err| {
+        panic!("Error reading directory: {}", err);
+    });
+
+    paths.filter_map(|entry| {
+        entry.ok().and_then(|e| {
+            let path = e.path();
+
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
+                let file_as_string =
+                    fs::read_to_string(path).expect("couldn't read file to string");
+
+                serde_json::from_str(&file_as_string).expect("failed to parse json into Bet struct")
+            } else {
+                None
+            }
+        })
+    })
+}
 
 pub fn create_bet_table(conn: &Connection) -> Result<()> {
     conn.execute(
@@ -85,4 +109,26 @@ pub fn bulk_insert_bets(conn: &mut Connection, bets: &Vec<Bet>) -> Result<usize>
     }
 
     Ok(bets.len())
+}
+
+pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
+    if !table_exists(conn, "bets")? {
+        debug!("creating 'bets' table");
+        create_bet_table(conn)?;
+    }
+
+    let mut count = 0;
+
+    // see TODO comment in init_market_table
+    if count_rows(conn, "bets").expect("failed to count rows in bets table") == 0 {
+        debug!("inserting bets");
+
+        for bets in iter_over_bets("backtest-data/bets") {
+            count += bulk_insert_bets(conn, &bets)?;
+        }
+
+        debug!("{count} bets inserted...");
+    }
+
+    Ok(count)
 }

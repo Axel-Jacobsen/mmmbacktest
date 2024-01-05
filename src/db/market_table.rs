@@ -1,5 +1,14 @@
-use crate::data_types::LiteMarket;
+use crate::data_types::{FullMarket, LiteMarket};
+use crate::db::db_common::*;
+use log::debug;
 use rusqlite::{params, Connection, Result};
+use std::fs;
+
+fn iter_over_markets(market_json: &String) -> Vec<FullMarket> {
+    let file_as_string = fs::read_to_string(market_json).unwrap();
+    let markets: Vec<FullMarket> = serde_json::from_str(&file_as_string).unwrap();
+    markets
+}
 
 pub fn create_market_table(conn: &Connection) -> Result<()> {
     conn.execute(
@@ -93,4 +102,33 @@ pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> 
     }
 
     Ok(markets.len())
+}
+
+pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
+    if !table_exists(conn, "markets")? {
+        debug!("creating 'markets' table");
+        create_market_table(conn)?;
+    }
+
+    let mut count = 0;
+
+    // TODO really we should check that the number of rows equals the number of bets,
+    // or maybe just check if all the ids are in the db and insert the missing ones?
+    if count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
+        debug!("inserting markets...");
+
+        let markets =
+            iter_over_markets(&"backtest-data/manifold-dump-markets-04082023.json".to_string());
+
+        // Pull the lite markets out, because I don't want to deal w/ full market for now. Changing this
+        // will be easy once we actually need the full markets!
+        let lite_markets: Vec<LiteMarket> =
+            markets.iter().map(|fm| fm.lite_market.clone()).collect();
+
+        count = bulk_insert_markets(conn, &lite_markets)?;
+
+        debug!("{count} markets inserted...");
+    }
+
+    Ok(count)
 }

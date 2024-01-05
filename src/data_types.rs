@@ -380,17 +380,17 @@ pub struct Bet {
     pub id: String,
 
     #[serde(rename = "userId")]
-    user_id: String,
+    pub user_id: String,
 
     // denormalized for bet lists (whatever that means)
     #[serde(rename = "userAvatarUrl", skip_serializing_if = "Option::is_none")]
-    user_avatar_url: Option<String>,
+    pub user_avatar_url: Option<String>,
 
     #[serde(rename = "userName", skip_serializing_if = "Option::is_none")]
-    user_name: Option<String>,
+    pub user_name: Option<String>,
 
     #[serde(rename = "userUsername", skip_serializing_if = "Option::is_none")]
-    user_username: Option<String>,
+    pub user_username: Option<String>,
 
     #[serde(rename = "contractId")]
     pub contract_id: String,
@@ -400,24 +400,24 @@ pub struct Bet {
     pub answer_id: Option<String>,
 
     #[serde(rename = "createdTime")]
-    created_time: u64,
+    pub created_time: u64,
 
     /// Bet size; negative if SELL bet
     pub amount: f64,
 
     /// Optional loan amount
     #[serde(rename = "loanAmount", skip_serializing_if = "Option::is_none")]
-    loan_amount: Option<f64>,
+    pub loan_amount: Option<f64>,
 
     pub outcome: String,
 
     /// Dynamic parimutuel pool weight or fixed; negative if SELL bet
-    shares: f64,
+    pub shares: f64,
 
     /// Deprecated: Gain shares in multiple outcomes. Part of cpmm-2 multiple choice.
     #[deprecated(note = "Use alternative field")]
     #[serde(rename = "sharesByOutcome", skip_serializing_if = "Option::is_none")]
-    shares_by_outcome: Option<HashMap<String, f64>>,
+    pub shares_by_outcome: Option<HashMap<String, f64>>,
 
     #[serde(rename = "probBefore")]
     pub prob_before: f64,
@@ -425,33 +425,33 @@ pub struct Bet {
     #[serde(rename = "probAfter")]
     pub prob_after: f64,
 
-    fees: Option<Fees>,
+    pub fees: Option<Fees>,
 
     /// True if bet was placed via API. Optional.
     #[serde(rename = "isApi", skip_serializing_if = "Option::is_none")]
-    is_api: Option<bool>,
+    pub is_api: Option<bool>,
 
     #[serde(rename = "isAnte")]
-    is_ante: bool,
+    pub is_ante: bool,
 
     #[serde(rename = "isRedemption")]
-    is_redemption: bool,
+    pub is_redemption: bool,
 
     #[serde(rename = "isChallenge")]
-    is_challenge: bool,
+    pub is_challenge: bool,
 
-    visibility: Visibility,
+    pub visibility: Visibility,
 
     /// Optional challenge slug
     #[serde(rename = "challengeSlug", skip_serializing_if = "Option::is_none")]
-    challenge_slug: Option<String>,
+    pub challenge_slug: Option<String>,
 
     /// Optional reply to comment ID
     #[serde(rename = "replyToCommentId", skip_serializing_if = "Option::is_none")]
-    reply_to_comment_id: Option<String>,
+    pub reply_to_comment_id: Option<String>,
 
     #[serde(flatten)]
-    limit_props: Option<LimitProps>,
+    pub limit_props: Option<LimitProps>,
 }
 
 impl Display for Bet {

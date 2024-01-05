@@ -3,7 +3,6 @@ use std::fs;
 use warp::http::StatusCode;
 use warp::Filter;
 
-mod schema;
 mod data_types;
 mod db;
 

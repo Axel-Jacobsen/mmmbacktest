@@ -1,13 +1,11 @@
-use diesel::{prelude::QueryResult, sqlite::SqliteConnection, Connection, RunQueryDsl};
-
+use rusqlite::{params, Connection, Result};
 
 use serde_json::Value;
 
 use std::collections::HashMap;
 use std::fs;
 
-use crate::data_types::{Bet, LiteMarket, FullMarket};
-use crate::schema::bets::dsl::*;
+use crate::data_types::{Bet, FullMarket, LiteMarket};
 
 // https://chat.openai.com/share/d2e2e7a3-80ed-4502-b090-9eb6237c5c74
 // Geez this is harder than I thought. I hope that throwing it all into a sqlite db
@@ -19,19 +17,12 @@ use crate::schema::bets::dsl::*;
 // Actually, there *has* to be a better way. This is insane. Maybe just making my own index is
 // fine.
 
-pub fn establish_connection() -> SqliteConnection {
-    SqliteConnection::establish("mmmbacktest.sqlite3")
-        .unwrap_or_else(|_| panic!("Error connecting to database"))
+fn get_db_connection() -> Result<Connection> {
+    Connection::open("my_database.db")
 }
 
-fn check_table_exists(conn: &mut SqliteConnection, table_name: &str) -> bool {
-    let query = format!("SELECT 1 FROM {} LIMIT 1", table_name);
-    diesel::sql_query(query).execute(conn).is_ok()
-}
-
-
-fn create_tables_if_not_exists(conn: &mut SqliteConnection) -> QueryResult<usize> {
-    diesel::sql_query(
+fn create_db_tables(conn: &Connection) -> Result<()> {
+    conn.execute(
         "CREATE TABLE bets (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -56,22 +47,29 @@ fn create_tables_if_not_exists(conn: &mut SqliteConnection) -> QueryResult<usize
             fees TEXT,
             limit_props TEXT,
             shares_by_outcome TEXT
-        )"
-    ).execute(conn)
+        )",
+        [],
+    )?;
+    Ok(())
 }
 
+fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
+    let mut stmt = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?1")?;
+    let exists = stmt.exists(params![table_name])?;
+    Ok(exists)
+}
 
-pub fn setup_db() -> SqliteConnection {
-    let mut conn = establish_connection();
-    if !check_table_exists(&mut conn, "bets") {
-        create_tables_if_not_exists(&mut conn);
+fn count_rows(conn: &Connection, table_name: &str) -> Result<usize> {
+    let mut stmt = conn.prepare(&format!("SELECT COUNT(*) FROM {}", table_name))?;
+    let count: usize = stmt.query_row([], |row| row.get(0))?;
+    Ok(count)
+}
+
+pub fn setup_db() -> Connection {
+    let conn = get_db_connection().expect("failed to get db connection");
+    if !table_exists(&conn, "bets").expect("failed to check if table exists") {
+        create_db_tables(&conn).expect("failed to create db tables - perhaps they already exist?");
     }
-    conn
-}
 
-fn insert_bets(conn: &SqliteConnection, betss: Vec<Bet>) {
-    diesel::insert_into(bets::table)
-        .values(&betss)
-        .execute(conn)
-        .expect("Error inserting Bet")
+    conn
 }

@@ -21,7 +21,7 @@ async fn main() {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let conn = db::setup_db();
+    let connection_pool = db::setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
     let base = warp::path("v0")
@@ -32,16 +32,24 @@ async fn main() {
         .and(warp::path("markets"))
         .and(warp::path::end())
         .and(warp::query::<MarketQueryParams>())
-        .map(|mq: MarketQueryParams| {
-            db::get_markets(
-                &conn,
-                mq.limit,
-                mq.sort.as_deref(),
-                mq.order.as_deref(),
-                mq.before.as_deref(),
-                mq.user_id.as_deref(),
-                mq.group_id.as_deref(),
+        .map(move |mq: MarketQueryParams| {
+            let conn = connection_pool
+                .get()
+                .expect("failed to get db connection from the pool");
+
+            println!(
+                "{:?}",
+                db::get_markets(
+                    &conn,
+                    mq.limit,
+                    mq.sort.as_deref(),
+                    mq.order.as_deref(),
+                    mq.before.as_deref(),
+                    mq.user_id.as_deref(),
+                    mq.group_id.as_deref(),
+                )
             );
+            // placeholder until I figure out the return type from db::get_markets
             StatusCode::NOT_IMPLEMENTED
         });
 

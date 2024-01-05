@@ -66,11 +66,14 @@ pub fn get_markets(
     Ok(vec![])
 }
 
-pub fn setup_db() -> Connection {
-    let mut conn = get_db_connection().expect("failed to get db connection");
+pub fn setup_db() -> Pool<SqliteConnectionManager> {
+    let connection_pool = get_db_connection().expect("failed to get db connection pool");
+    let mut conn = connection_pool
+        .get()
+        .expect("failed to get db connection from the pool");
 
     init_market_table(&mut conn).expect("failed to init market table");
     init_bet_table(&mut conn).expect("failed to init bet table");
 
-    conn
+    connection_pool
 }

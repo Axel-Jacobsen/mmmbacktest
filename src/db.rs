@@ -237,14 +237,14 @@ fn count_rows(conn: &Connection, table_name: &str) -> Result<usize> {
 }
 
 fn init_market_table(conn: &mut Connection) -> Result<usize> {
-    if !table_exists(&conn, "markets")? {
+    if !table_exists(conn, "markets")? {
         println!("creating markets table");
-        create_litemarket_table(&conn)?;
+        create_litemarket_table(conn)?;
     }
 
     let mut count = 0;
 
-    if count_rows(&conn, "markets").expect("failed to count rows in markets table") == 0 {
+    if count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
         println!("inserting markets");
 
         let markets =
@@ -260,16 +260,16 @@ fn init_market_table(conn: &mut Connection) -> Result<usize> {
 }
 
 fn init_bet_table(conn: &mut Connection) -> Result<usize> {
-    if !table_exists(&conn, "bets")? {
-        create_bet_table(&conn)?;
+    if !table_exists(conn, "bets")? {
+        create_bet_table(conn)?;
     }
 
     let mut count = 0;
 
-    if count_rows(&conn, "bets").expect("failed to count rows in bets table") == 0 {
+    if count_rows(conn, "bets").expect("failed to count rows in bets table") == 0 {
         println!("inserting bets");
 
-        for bets in iterate_over_bets(&"backtest-data/bets".to_string()) {
+        for bets in iterate_over_bets("backtest-data/bets") {
             count += bulk_insert_bets(conn, &bets)?;
         }
     }

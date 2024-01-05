@@ -1,5 +1,3 @@
-use std::fs;
-
 use warp::http::StatusCode;
 use warp::Filter;
 
@@ -8,7 +6,7 @@ mod db;
 
 #[tokio::main]
 async fn main() {
-    let mut conn = db::setup_db();
+    db::setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
     let base = warp::path("v0")
@@ -17,5 +15,5 @@ async fn main() {
 
     let routes = root.or(base);
 
-    // warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

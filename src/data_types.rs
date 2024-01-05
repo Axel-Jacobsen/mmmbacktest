@@ -146,14 +146,14 @@ pub struct LiteMarket {
 
     /// Attributes about the creator
     #[serde(rename = "creatorUsername")]
-    creator_username: String,
+    pub creator_username: String,
 
     /// The name of the creator
     #[serde(rename = "creatorName")]
-    creator_name: String,
+    pub creator_name: String,
 
     #[serde(rename = "creatorAvatarUrl")]
-    creator_avatar_url: Option<String>,
+    pub creator_avatar_url: Option<String>,
 
     /// Market attributes. All times are in milliseconds since epoch
 
@@ -162,11 +162,11 @@ pub struct LiteMarket {
     /// see https://manifold.markets/PlasmaBallin/will-the-trinity-test-ignite-the-at
     /// Just leave as Option<i64>
     #[serde(rename = "closeTime")]
-    close_time: Option<i64>,
+    pub close_time: Option<i64>,
 
     /// milliseconds since epoch
     #[serde(rename = "createdTime")]
-    created_time: u64,
+    pub created_time: u64,
 
     /// The question!
     pub question: String,
@@ -174,69 +174,69 @@ pub struct LiteMarket {
     /// Note: This url always points to <https://manifold.markets>, regardless of what instance the api is running on.
     /// This url includes the creator's username, but this doesn't need to be correct when constructing valid URLs.
     ///   i.e. <https://manifold.markets/Austin/test-market> is the same as <https://manifold.markets/foo/test-market>
-    url: String,
+    pub url: String,
 
     /// BINARY, FREE_RESPONSE, MULTIPLE_CHOICE, NUMERIC, or PSEUDO_NUMERIC
     #[serde(rename = "outcomeType")]
-    outcome_type: MarketOutcomeType,
+    pub outcome_type: MarketOutcomeType,
 
     /// dpm-2 or cpmm-1 or cpmm-multi-1
-    mechanism: MarketMechanism,
+    pub mechanism: MarketMechanism,
 
     /// current probability of the market
-    probability: Option<f64>,
+    pub probability: Option<f64>,
 
     /// For CPMM markets, the number of shares in the liquidity pool. For DPM markets,
     /// the amount of mana invested in each answer.
     // pool: Option<HashMap<MarketOutcome, f64>>,
     // ^^^^ MarketOutcome can be YES, NO, and 0..\d
     // Therefore we just do String, and we'll have to deal w/ decoding YES / NO at runtime :(
-    pool: Option<HashMap<String, f64>>,
+    pub pool: Option<HashMap<String, f64>>,
 
     /// CPMM markets only, probability constant in y^p * n^(1-p) = k
-    p: Option<f64>,
+    pub p: Option<f64>,
 
     /// CPMM markets only, the amount of mana deposited into the liquidity pool
     #[serde(rename = "total_liquidity")]
-    total_liquidity: Option<f64>,
+    pub total_liquidity: Option<f64>,
 
     /// PSEUDO_NUMERIC markets only, the current market value, which is mapped from
     /// probability using min, max, and isLogScale.
-    value: Option<f64>,
+    pub value: Option<f64>,
 
     /// PSEUDO_NUMERIC markets only, the minimum resolvable value
-    min: Option<f64>,
+    pub min: Option<f64>,
 
     /// PSEUDO_NUMERIC markets only, the maximum resolvable value
-    max: Option<f64>,
+    pub max: Option<f64>,
 
     /// PSEUDO_NUMERIC markets only, if true `number = (max - min + 1)^probability + minstart - 1`,
     /// otherwise `number = min + (max - min) * probability`
     #[serde(rename = "isLogScale")]
-    is_log_scale: Option<bool>,
+    pub is_log_scale: Option<bool>,
 
-    volume: f64,
+    pub volume: f64,
 
     #[serde(rename = "volume24Hours")]
-    volume_24_hours: f64,
+    pub volume_24_hours: f64,
 
     #[serde(rename = "isResolved")]
-    is_resolved: bool,
+    pub is_resolved: bool,
 
     #[serde(rename = "resolutionTime")]
-    resolution_time: Option<u64>,
+    pub resolution_time: Option<u64>,
 
-    resolution: Option<String>,
+    pub resolution: Option<String>,
 
     /// Used for BINARY markets resolved to MKT
     #[serde(rename = "resolutionProbability")]
-    resolution_probability: Option<f64>,
+    pub resolution_probability: Option<f64>,
 
     #[serde(rename = "lastUpdatedTime")]
-    last_updated_time: Option<u64>,
+    pub last_updated_time: Option<u64>,
 
     #[serde(rename = "lastBetTime")]
-    last_bet_time: Option<u64>,
+    pub last_bet_time: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -1,8 +1,9 @@
-use crate::data_types::{FullMarket, LiteMarket};
-use crate::db::db_common::*;
 use log::debug;
 use rusqlite::{params, Connection, Result};
 use std::fs;
+
+use crate::data_types::{FullMarket, LiteMarket};
+use crate::db::db_common::*;
 
 fn iter_over_markets(market_json: &String) -> Vec<FullMarket> {
     let file_as_string = fs::read_to_string(market_json).unwrap();
@@ -108,12 +109,15 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
     if !table_exists(conn, "markets")? {
         debug!("creating 'markets' table");
         create_market_table(conn)?;
+    } else {
+        debug!("found 'bets' table");
     }
 
     let mut count = 0;
 
     // TODO really we should check that the number of rows equals the number of bets,
     // or maybe just check if all the ids are in the db and insert the missing ones?
+    let num_rows = count_rows(conn, "markets").expect("failed to count rows in markets table");
     if count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
         debug!("inserting markets...");
 
@@ -128,6 +132,9 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
         count = bulk_insert_markets(conn, &lite_markets)?;
 
         debug!("{count} markets inserted...");
+    } else {
+        // TODO
+        debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
 
     Ok(count)

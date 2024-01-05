@@ -1,27 +1,59 @@
-use crate::data_types::Bet;
-use crate::db::db_common::*;
+use indicatif::{ProgressBar, ProgressStyle};
 use log::debug;
 use rusqlite::{params, Connection, Result};
 use std::fs;
+
+use crate::data_types::Bet;
+use crate::db::db_common::*;
 
 fn iter_over_bets(bets_dir: &str) -> impl Iterator<Item = Vec<Bet>> {
     let paths = fs::read_dir(bets_dir).unwrap_or_else(|err| {
         panic!("Error reading directory: {}", err);
     });
 
-    paths.filter_map(|entry| {
-        entry.ok().and_then(|e| {
+    // Count the number of files that will be processed
+    let total_files = paths
+        .filter(|entry| {
+            if let Ok(e) = entry {
+                let path = e.path();
+                path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json")
+            } else {
+                false
+            }
+        })
+        .count();
+
+    // Create a new progress bar with the total count
+    let progress_bar = ProgressBar::new(total_files as u64);
+    progress_bar.set_style(
+        ProgressStyle::default_bar()
+            .template(
+                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
+            )
+            .unwrap()
+            .progress_chars("#>-"),
+    );
+
+    // Reset the iterator to read the directory again
+    let paths = fs::read_dir(bets_dir).unwrap();
+
+    paths.filter_map(move |entry| {
+        if let Ok(e) = entry {
             let path = e.path();
 
             if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
                 let file_as_string =
-                    fs::read_to_string(path).expect("couldn't read file to string");
+                    fs::read_to_string(&path).expect("couldn't read file to string");
+
+                progress_bar.inc(1); // Increment the progress bar
 
                 serde_json::from_str(&file_as_string).expect("failed to parse json into Bet struct")
             } else {
                 None
             }
-        })
+        } else {
+            None
+        }
     })
 }
 
@@ -115,12 +147,15 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
     if !table_exists(conn, "bets")? {
         debug!("creating 'bets' table");
         create_bet_table(conn)?;
+    } else {
+        debug!("found 'bets' table");
     }
 
     let mut count = 0;
 
     // see TODO comment in init_market_table
-    if count_rows(conn, "bets").expect("failed to count rows in bets table") == 0 {
+    let num_rows = count_rows(conn, "bets").expect("failed to count rows in bets table");
+    if num_rows == 0 {
         debug!("inserting bets");
 
         for bets in iter_over_bets("backtest-data/bets") {
@@ -128,6 +163,9 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
         }
 
         debug!("{count} bets inserted...");
+    } else {
+        // TODO
+        debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
 
     Ok(count)

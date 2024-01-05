@@ -1,3 +1,4 @@
+use log::debug;
 use rusqlite::{params, Connection, Result};
 
 use std::fs;
@@ -238,14 +239,14 @@ fn count_rows(conn: &Connection, table_name: &str) -> Result<usize> {
 
 fn init_market_table(conn: &mut Connection) -> Result<usize> {
     if !table_exists(conn, "markets")? {
-        println!("creating markets table");
+        debug!("creating 'markets' table");
         create_litemarket_table(conn)?;
     }
 
     let mut count = 0;
 
     if count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
-        println!("inserting markets");
+        debug!("inserting markets...");
 
         let markets =
             iter_over_markets(&"backtest-data/manifold-dump-markets-04082023.json".to_string());
@@ -254,6 +255,8 @@ fn init_market_table(conn: &mut Connection) -> Result<usize> {
             markets.iter().map(|fm| fm.lite_market.clone()).collect();
 
         count = bulk_insert_markets(conn, &lite_markets)?;
+
+        debug!("{count} markets inserted...");
     }
 
     Ok(count)
@@ -261,17 +264,20 @@ fn init_market_table(conn: &mut Connection) -> Result<usize> {
 
 fn init_bet_table(conn: &mut Connection) -> Result<usize> {
     if !table_exists(conn, "bets")? {
+        debug!("creating 'bets' table");
         create_bet_table(conn)?;
     }
 
     let mut count = 0;
 
     if count_rows(conn, "bets").expect("failed to count rows in bets table") == 0 {
-        println!("inserting bets");
+        debug!("inserting bets");
 
         for bets in iterate_over_bets("backtest-data/bets") {
             count += bulk_insert_bets(conn, &bets)?;
         }
+
+        debug!("{count} bets inserted...");
     }
 
     Ok(count)

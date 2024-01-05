@@ -1,3 +1,4 @@
+use std::env;
 use warp::http::StatusCode;
 use warp::Filter;
 
@@ -6,6 +7,9 @@ mod db;
 
 #[tokio::main]
 async fn main() {
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
+
     db::setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);

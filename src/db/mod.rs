@@ -2,12 +2,22 @@ mod bet_table;
 mod db_common;
 mod market_table;
 
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection, Result};
+use serde_json::Value;
 
 use crate::db::bet_table::init_bet_table;
 use crate::db::db_common::get_db_connection;
 use crate::db::market_table::init_market_table;
 
+/// Impls GET /v0/markets
+/// Note that we filter the column 'creator_id' by
+/// the query parameter 'user_id'.
+/// Also note that groupId is not in the backtest data,
+/// so it's ignored here.
+/// Also, sort can't have the value last-comment-time because
+/// there isn't a column for that in the backtest data.
 pub fn get_markets(
     conn: &Connection,
     limit: Option<i64>,
@@ -15,55 +25,56 @@ pub fn get_markets(
     order: Option<&str>,
     before: Option<&str>,
     user_id: Option<&str>,
-    group_id: Option<&str>,
-) -> Result<Vec<serde_json::Value>> {
-    let mut query = String::from("SELECT * FROM Markets WHERE ");
-    let mut conditions = Vec::new();
-    let mut params = Vec::new();
-
-    if let Some(before) = before {
-        conditions.push("id < :before");
-        params.push(("before", before));
-    }
-    if let Some(user_id) = user_id {
-        conditions.push("creator_id = :user_id");
-        params.push(("user_id", user_id));
-    }
-    if let Some(group_id) = group_id {
-        conditions.push("group_id = :group_id");
-        params.push(("group_id", group_id));
-    }
-
-    query += &conditions.join(" AND ");
-
-    let sort_column = match sort.unwrap_or("created-time") {
-        "updated-time" => "updated_time",
-        "last-bet-time" => "last_bet_time",
-        "last-comment-time" => "last_comment_time",
-        _ => "created_time",
+    _group_id: Option<&str>,
+) -> Result<Vec<Value>> {
+    let order = match order {
+        Some("desc") => "DESC",
+        _ => "ASC",
     };
 
-    let order = if order == Some("asc") { "ASC" } else { "DESC" };
-    query += &format!(" ORDER BY {} {}", sort_column, order);
+    let sort = match sort {
+        Some("created-time") => "created-time",
+        Some("updated-time") => "updated-time",
+        Some("last-bet-time") => "last-bet-time",
+        _ => "created-time",
+    };
 
-    let limit = limit.unwrap_or(500).min(1000); // Ensure limit is not more than 1000
-    query += &format!(" LIMIT {}", limit);
+    let query = format!(
+        "SELECT * FROM markets
+        WHERE
+          (:user_id IS NULL OR creator_id = :user_id) AND
+          (:before IS NULL OR id < :before)
+        ORDER BY
+          CASE
+            WHEN :sort = 'created-time' THEN created_time
+            WHEN :sort = 'updated-time' THEN last_updated_time
+            WHEN :sort = 'last-bet-time' THEN last_bet_time
+          END {order}
+        LIMIT :limit;"
+    );
 
     let mut stmt = conn.prepare(&query)?;
 
-    let rows = stmt.query_map(
+    let markets_iter = stmt.query_map(
         named_params! {
+            ":limit": limit.unwrap_or(500).min(1000),
+            // ":order": order,
+            ":sort": sort,
             ":before": before,
             ":user_id": user_id,
-            ":group_id": group_id,
         },
         |row| {
             println!("row: {:?}", row);
-            Ok(())
+            Ok(Value::String(row.get(0)?))
         },
     )?;
 
-    Ok(vec![])
+    let mut markets = Vec::new();
+    for market in markets_iter {
+        markets.push(market?);
+    }
+
+    Ok(markets)
 }
 
 pub fn setup_db() -> Pool<SqliteConnectionManager> {

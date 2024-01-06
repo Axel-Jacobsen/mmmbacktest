@@ -15,6 +15,7 @@ pub fn create_market_table(conn: &Connection) -> Result<()> {
     conn.execute(
         "CREATE TABLE markets (
             id TEXT PRIMARY KEY,
+            creator_id TEXT NOT NULL,
             creator_username TEXT NOT NULL,
             creator_name TEXT NOT NULL,
             creator_avatar_url TEXT,
@@ -48,17 +49,15 @@ pub fn create_market_table(conn: &Connection) -> Result<()> {
 
 pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> Result<usize> {
     let stmt_str = "INSERT INTO markets (
-        id, creator_username, creator_name, creator_avatar_url, close_time,
+        id, creator_id, creator_username, creator_name, creator_avatar_url, close_time,
         created_time, question, url, outcome_type, mechanism, probability,
         pool, p, total_liquidity, value, min, max, is_log_scale, volume,
         volume_24_hours, is_resolved, resolution_time, resolution,
         resolution_probability, last_updated_time, last_bet_time
     ) VALUES (
-        ?1, ?2, ?3, ?4, ?5,
-        ?6, ?7, ?8, ?9, ?10, ?11,
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11,
         ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19,
-        ?20, ?21, ?22, ?23,
-        ?24, ?25, ?26
+        ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27
     );";
 
     for chunk in markets.chunks(1000) {
@@ -70,6 +69,7 @@ pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> 
             for market in chunk {
                 stmt.execute(params![
                     market.id,
+                    market.creator_id,
                     market.creator_username,
                     market.creator_name,
                     market.creator_avatar_url,

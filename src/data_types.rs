@@ -144,6 +144,10 @@ pub struct LiteMarket {
     /// Unique identifer for this market
     pub id: String,
 
+    /// The id of the creator
+    #[serde(rename = "creatorId")]
+    pub creator_id: String,
+
     /// Attributes about the creator
     #[serde(rename = "creatorUsername")]
     pub creator_username: String,

@@ -30,7 +30,7 @@ n  GET  /v0/groups
 n  GET  /v0/group/[slug]
 n  GET  /v0/group/by-id/[id]
 n  GET  /v0/group/by-id/[id]/markets (Deprecated)
-x  GET  /v0/markets
+y  GET  /v0/markets
 x  GET  /v0/market/[marketId]
 x  GET  /v0/market/[marketId]/positions
 x  GET  /v0/slug/[marketSlug]

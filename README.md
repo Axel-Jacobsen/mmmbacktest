@@ -17,40 +17,40 @@ tbd ;)
 ## endpoint list
 
 ```
-x = not implemented yet
-y = implemented
-n = not going to implement
-~ = not sure yet
+''  = not implemented yet
+y   = implemented
+n   = not going to implement
 
-~  GET  /v0/user/[username]
-~  GET  /v0/user/by-id/[id]
-~  GET  /v0/me
+n  GET  /v0/user/[username]
+n  GET  /v0/user/by-id/[id]
+n  GET  /v0/me
 n  GET  /v0/user/[username]/bets (Deprecated)
 n  GET  /v0/groups
 n  GET  /v0/group/[slug]
 n  GET  /v0/group/by-id/[id]
 n  GET  /v0/group/by-id/[id]/markets (Deprecated)
-y  GET  /v0/markets
-x  GET  /v0/market/[marketId]
-x  GET  /v0/market/[marketId]/positions
-x  GET  /v0/slug/[marketSlug]
-x  GET  /v0/search-markets
+Y  GET  /v0/markets
+Y  GET  /v0/market/[marketId]  // returns a LiteMarket instead of a FullMarket,
+                               // since the backtest data includes LiteMarkets only
+   GET  /v0/market/[marketId]/positions
+   GET  /v0/slug/[marketSlug]
+   GET  /v0/search-markets
 n  GET  /v0/users
-x  POST /v0/bet
-x  POST /v0/bet/cancel/[id]
-x  POST /v0/market
-x  POST /v0/market/[marketId]/answer
-x  POST /v0/market/[marketId]/add-liquidity
-x  POST /v0/market/[marketId]/add-bounty
-x  POST /v0/market/[marketId]/award-bounty
-x  POST /v0/market/[marketId]/close
-x  POST /v0/market/[marketId]/group
-x  POST /v0/market/[marketId]/resolve
-x  POST /v0/market/[marketId]/sell
-x  POST /v0/sell-shares-dpm
+   POST /v0/bet
+   POST /v0/bet/cancel/[id]
+   POST /v0/market
+   POST /v0/market/[marketId]/answer
+   POST /v0/market/[marketId]/add-liquidity
+   POST /v0/market/[marketId]/add-bounty
+   POST /v0/market/[marketId]/award-bounty
+   POST /v0/market/[marketId]/close
+   POST /v0/market/[marketId]/group
+   POST /v0/market/[marketId]/resolve
+   POST /v0/market/[marketId]/sell
+   POST /v0/sell-shares-dpm
 n  POST /v0/comment
 n  GET  /v0/comments
-x  GET  /v0/bets
+   GET  /v0/bets
 n  GET  /v0/managrams
 n  POST /v0/managram
 n  GET  /v0/leagues

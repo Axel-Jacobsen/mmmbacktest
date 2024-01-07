@@ -177,8 +177,8 @@ pub fn get_bets(
           (:user_id IS NULL OR user_id = :user_id) AND
           (:username IS NULL OR user_name = :username) AND
           (:contract_id IS NULL OR contract_id = :contract_id) AND
-          (:before IS NULL OR id < :before) AND
-          (:after IS NULL OR id > :after)
+          (:before IS NULL OR created_time < (SELECT created_time FROM bets WHERE id = :before)) AND
+          (:after IS NULL OR created_time > (SELECT created_time FROM bets WHERE id = :before))
         ORDER BY created_time {order}
         LIMIT :limit;"
     );

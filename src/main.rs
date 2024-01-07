@@ -30,12 +30,16 @@ async fn main() {
     let connection_pool = db::setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
+
     let base = warp::path("v0")
         .and(warp::path::end())
         .map(|| StatusCode::NOT_IMPLEMENTED);
 
-    let markets_endpoint = warp::path("v0")
+    let v0 = warp::path("v0");
+
+    let markets_endpoint = v0
         .and(warp::path("markets"))
+        .and(warp::path::end())
         .and(warp::query::<MarketQueryParams>())
         .map(move |mq: MarketQueryParams| {
             let conn = connection_pool
@@ -52,10 +56,11 @@ async fn main() {
                 mq.group_id.as_deref(),
             );
 
-            println!("got markets: {:?}", maybe_markets);
-
             match maybe_markets {
-                Ok(markets) => warp::reply::json(&markets),
+                Ok(markets) => {
+                    log::info!("returning {} markets", markets.len());
+                    warp::reply::json(&markets)
+                }
                 Err(e) => {
                     log::error!("{}", e);
                     warp::reply::json(&HttpError {

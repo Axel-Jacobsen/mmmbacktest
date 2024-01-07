@@ -1,10 +1,12 @@
 use indicatif::{ProgressBar, ProgressStyle};
 use log::debug;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Result, Row};
 use std::fs;
 
 use crate::data_types::Bet;
-use crate::db::db_common::*;
+use crate::data_types::{Fees, LimitProps, Visibility};
+use crate::db::db_common;
+use crate::db::errors::RowParsingError;
 
 fn iter_over_bets(bets_dir: &str) -> impl Iterator<Item = Vec<Bet>> {
     let paths = fs::read_dir(bets_dir).unwrap_or_else(|err| {
@@ -143,8 +145,48 @@ pub fn bulk_insert_bets(conn: &mut Connection, bets: &Vec<Bet>) -> Result<usize>
     Ok(bets.len())
 }
 
+/// Attempts to convert row into a Bet.
+/// If there's the wrong number of rows, we return an Err.
+/// Sort-of an inverse of bulk_insert_markets
+pub fn rusqlite_row_to_bet(row: &Row) -> Result<Bet, RowParsingError> {
+    let fees_str: String = row.get(14)?;
+    let visibility_str: String = row.get(19)?;
+    let limit_props_str: String = row.get(22)?;
+
+    let fees = Some(serde_json::from_str::<Fees>(&fees_str)?);
+    let visibility = serde_json::from_str::<Visibility>(&visibility_str)?;
+    let limit_props_str = Some(serde_json::from_str::<LimitProps>(&limit_props_str)?);
+
+    Ok(Bet {
+        id: row.get(0)?,
+        user_id: row.get(1)?,
+        user_avatar_url: row.get(2)?,
+        user_name: row.get(3)?,
+        user_username: row.get(4)?,
+        contract_id: row.get(5)?,
+        answer_id: row.get(6)?,
+        created_time: row.get(7)?,
+        amount: row.get(8)?,
+        loan_amount: row.get(9)?,
+        outcome: row.get(10)?,
+        shares: row.get(11)?,
+        shares_by_outcome: None,
+        prob_before: row.get(12)?,
+        prob_after: row.get(13)?,
+        fees: fees,
+        is_api: row.get(15)?,
+        is_ante: row.get(16)?,
+        is_redemption: row.get(17)?,
+        is_challenge: row.get(18)?,
+        visibility: visibility,
+        challenge_slug: row.get(20)?,
+        reply_to_comment_id: row.get(21)?,
+        limit_props: limit_props_str,
+    })
+}
+
 pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
-    if !table_exists(conn, "bets")? {
+    if !db_common::table_exists(conn, "bets")? {
         debug!("creating 'bets' table");
         create_bet_table(conn)?;
     } else {
@@ -154,7 +196,7 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
     let mut count = 0;
 
     // see TODO comment in init_market_table
-    let num_rows = count_rows(conn, "bets").expect("failed to count rows in bets table");
+    let num_rows = db_common::count_rows(conn, "bets").expect("failed to count rows in bets table");
     if num_rows == 0 {
         debug!("inserting bets");
 

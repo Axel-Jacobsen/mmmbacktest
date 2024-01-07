@@ -3,7 +3,7 @@ use rusqlite::{params, Connection, Result, Row};
 use std::{collections::HashMap, fs};
 
 use crate::data_types::{FullMarket, LiteMarket, MarketMechanism, MarketOutcomeType};
-use crate::db::db_common::*;
+use crate::db::db_common;
 use crate::db::errors::RowParsingError;
 
 fn iter_over_markets(market_json: &String) -> Vec<FullMarket> {
@@ -150,7 +150,7 @@ pub fn rusqlite_row_to_litemarket(row: &Row) -> Result<LiteMarket, RowParsingErr
 }
 
 pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
-    if !table_exists(conn, "markets")? {
+    if !db_common::table_exists(conn, "markets")? {
         debug!("creating 'markets' table");
         create_market_table(conn)?;
     } else {
@@ -161,8 +161,8 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
 
     // TODO really we should check that the number of rows equals the number of bets,
     // or maybe just check if all the ids are in the db and insert the missing ones?
-    let num_rows = count_rows(conn, "markets").expect("failed to count rows in markets table");
-    if count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
+    let num_rows = db_common::count_rows(conn, "markets").expect("failed to count rows in markets table");
+    if db_common::count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
         debug!("inserting markets...");
 
         let markets =

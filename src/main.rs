@@ -70,6 +70,7 @@ async fn main() {
             }
         });
 
+    // we return a LiteMarket instead of a FullMarket here :(
     let connection_pool_clone = connection_pool.clone();
     let market_by_id = v0
         .and(warp::path("markets"))

@@ -16,6 +16,19 @@ struct MarketQueryParams {
     _group_id: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct BetQueryParams {
+    user_id: Option<String>,
+    username: Option<String>,
+    contract_id: Option<String>,
+    contract_slug: Option<String>,
+    limit: Option<i64>,
+    before: Option<String>,
+    after: Option<String>,
+    kinds: Option<String>,
+    order: Option<String>,
+}
+
 #[derive(Serialize)]
 struct HttpError {
     code: u16,
@@ -40,6 +53,11 @@ async fn main() {
         .and(warp::path::end())
         .map(|| StatusCode::NOT_IMPLEMENTED);
 
+    // MAJOR TODO
+    //
+    // Listing out all these endpoints is messy. I want to move the
+    // endpoint construction somewhere else. How do we do this?
+    //
     // we have to clone this pool twice? I bet I got something wrong
     let connection_pool_clone = connection_pool.clone();
     let markets_endpoint = v0
@@ -72,7 +90,7 @@ async fn main() {
 
     // we return a LiteMarket instead of a FullMarket here :(
     let connection_pool_clone = connection_pool.clone();
-    let market_by_id = v0
+    let market_by_id_endpoint = v0
         .and(warp::path("markets"))
         .and(warp::path::param())
         .and(warp::path::end())
@@ -102,7 +120,44 @@ async fn main() {
             }
         });
 
-    let routes = root.or(base).or(markets_endpoint).or(market_by_id);
+    let connection_pool_clone = connection_pool.clone();
+    let bets_endpoint = v0
+        .and(warp::path("bets"))
+        .and(warp::path::end())
+        .and(warp::query::<BetQueryParams>())
+        .map(move |bq: BetQueryParams| {
+            let pool = connection_pool_clone.clone();
+            let conn = pool
+                .get()
+                .expect("failed to get db connection from the pool");
+
+            let maybe_bets = db::get_bets_by_params(
+                &conn,
+                bq.user_id.as_deref(),
+                bq.username.as_deref(),
+                bq.contract_id.as_deref(),
+                bq.contract_slug.as_deref(),
+                bq.limit,
+                bq.before.as_deref(),
+                bq.after.as_deref(),
+                bq.kinds.as_deref(),
+                bq.order.as_deref(),
+            );
+
+            match maybe_bets {
+                Ok(bets) => {
+                    log::info!("returning {} bets", bets.len());
+                    warp::reply::json(&bets)
+                }
+                Err(e) => ret_http_error(400, e.to_string()),
+            }
+        });
+
+    let routes = root
+        .or(base)
+        .or(markets_endpoint)
+        .or(market_by_id_endpoint)
+        .or(bets_endpoint);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

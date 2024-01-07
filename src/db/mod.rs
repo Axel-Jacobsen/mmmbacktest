@@ -8,7 +8,7 @@ use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection, Result};
 use serde_json::Value;
 
-use crate::db::bet_table::init_bet_table;
+use crate::db::bet_table::{init_bet_table, rusqlite_row_to_bet};
 use crate::db::db_common::get_db_connection;
 use crate::db::errors::RowParsingError;
 use crate::db::market_table::{init_market_table, rusqlite_row_to_litemarket};
@@ -20,7 +20,7 @@ use crate::db::market_table::{init_market_table, rusqlite_row_to_litemarket};
 /// so it's ignored here.
 /// Also, sort can't have the value last-comment-time because
 /// there isn't a column for that in the backtest data.
-pub fn get_markets(
+fn get_markets(
     conn: &Connection,
     id: Option<&str>,
     limit: Option<i64>,
@@ -96,6 +96,95 @@ pub fn get_markets_by_id(
     id: Option<&str>,
 ) -> Result<Vec<Value>, RowParsingError> {
     get_markets(conn, id, None, None, None, None, None)
+}
+
+pub fn get_bets(
+    conn: &Connection,
+    user_id: Option<&str>,
+    username: Option<&str>,
+    contract_id: Option<&str>,
+    contract_slug: Option<&str>,
+    limit: Option<i64>,
+    before: Option<&str>,
+    after: Option<&str>,
+    kinds: Option<&str>,
+    order: Option<&str>,
+) -> Result<Vec<Value>, RowParsingError> {
+    let order = match order {
+        Some("desc") => "DESC",
+        _ => "ASC",
+    };
+
+    // TODO
+    // if contract_id or contract_slug are not None,
+    // then we need to join those columns on the market table
+    // and then query on that
+
+    let query = format!(
+        "SELECT * FROM bets
+        WHERE
+          (:user_id IS NULL OR user_id = :user_id) AND
+          (:username IS NULL OR user_name = :username) AND
+          (:contract_id IS NULL OR contract_id = :contract_id) AND
+          (:contract_slug IS NULL OR contract_slug = :contract_slug) AND
+          (:before IS NULL OR id < :before) AND  -- this isn't quite right
+          (:after IS NULL OR id > :after) AND    -- and neither is this
+          (:kinds IS NULL OR kinds = :kinds)
+        ORDER BY {order}
+        LIMIT :limit;"
+    );
+
+    let mut stmt = conn.prepare(&query)?;
+
+    let bet_iter = stmt.query_map(
+        named_params! {
+            ":user_id": user_id,
+            ":username": username,
+            ":contract_id": contract_id,
+            ":contract_slug": contract_slug,
+            ":limit": limit.unwrap_or(500).min(1000),
+            ":before": before,
+            ":after": after,
+            ":kinds": kinds,
+        },
+        |row| Ok(rusqlite_row_to_bet(row)),
+    )?;
+
+    let mut bets: Vec<Value> = Vec::new();
+    for maybe_bet in bet_iter {
+        // ??!! haha
+        let bet = maybe_bet??;
+        let bet_json = serde_json::to_value(bet)?;
+        bets.push(bet_json);
+    }
+
+    Ok(bets)
+}
+
+pub fn get_bets_by_params(
+    conn: &Connection,
+    user_id: Option<&str>,
+    username: Option<&str>,
+    contract_id: Option<&str>,
+    contract_slug: Option<&str>,
+    limit: Option<i64>,
+    before: Option<&str>,
+    after: Option<&str>,
+    kinds: Option<&str>,
+    order: Option<&str>,
+) -> Result<Vec<Value>, RowParsingError> {
+    get_bets(
+        conn,
+        user_id,
+        username,
+        contract_id,
+        contract_slug,
+        limit,
+        before,
+        after,
+        kinds,
+        order,
+    )
 }
 
 pub fn setup_db() -> Pool<SqliteConnectionManager> {

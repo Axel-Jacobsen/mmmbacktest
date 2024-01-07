@@ -161,7 +161,8 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
 
     // TODO really we should check that the number of rows equals the number of bets,
     // or maybe just check if all the ids are in the db and insert the missing ones?
-    let num_rows = db_common::count_rows(conn, "markets").expect("failed to count rows in markets table");
+    let num_rows =
+        db_common::count_rows(conn, "markets").expect("failed to count rows in markets table");
     if db_common::count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
         debug!("inserting markets...");
 

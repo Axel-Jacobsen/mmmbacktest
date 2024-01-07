@@ -1,5 +1,6 @@
 mod bet_table;
 mod db_common;
+mod errors;
 mod market_table;
 
 use r2d2::Pool;
@@ -9,7 +10,8 @@ use serde_json::Value;
 
 use crate::db::bet_table::init_bet_table;
 use crate::db::db_common::get_db_connection;
-use crate::db::market_table::init_market_table;
+use crate::db::errors::RowParsingError;
+use crate::db::market_table::{init_market_table, rusqlite_row_to_litemarket};
 
 /// Impls GET /v0/markets
 /// Note that we filter the column 'creator_id' by
@@ -26,7 +28,7 @@ pub fn get_markets(
     before: Option<&str>,
     user_id: Option<&str>,
     _group_id: Option<&str>,
-) -> Result<Vec<Value>> {
+) -> Result<Vec<Value>, RowParsingError> {
     let order = match order {
         Some("desc") => "DESC",
         _ => "ASC",
@@ -55,23 +57,22 @@ pub fn get_markets(
 
     let mut stmt = conn.prepare(&query)?;
 
-    let markets_iter = stmt.query_map(
+    let market_iter = stmt.query_map(
         named_params! {
             ":limit": limit.unwrap_or(500).min(1000),
-            // ":order": order,
             ":sort": sort,
             ":before": before,
             ":user_id": user_id,
         },
-        |row| {
-            println!("row: {:?}", row);
-            Ok(Value::String(row.get(0)?))
-        },
+        |row| Ok(rusqlite_row_to_litemarket(row)),
     )?;
 
-    let mut markets = Vec::new();
-    for market in markets_iter {
-        markets.push(market?);
+    let mut markets: Vec<Value> = Vec::new();
+    for maybe_market in market_iter {
+        // ?? !! ?? !!
+        let market = maybe_market??;
+        let market_json = serde_json::to_value(market)?;
+        markets.push(market_json);
     }
 
     Ok(markets)

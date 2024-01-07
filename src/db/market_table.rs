@@ -1,9 +1,10 @@
 use log::debug;
-use rusqlite::{params, Connection, Result};
-use std::fs;
+use rusqlite::{params, Connection, Result, Row};
+use std::{collections::HashMap, fs};
 
-use crate::data_types::{FullMarket, LiteMarket};
+use crate::data_types::{FullMarket, LiteMarket, MarketMechanism, MarketOutcomeType};
 use crate::db::db_common::*;
+use crate::db::errors::RowParsingError;
 
 fn iter_over_markets(market_json: &String) -> Vec<FullMarket> {
     let file_as_string = fs::read_to_string(market_json).unwrap();
@@ -103,6 +104,49 @@ pub fn bulk_insert_markets(conn: &mut Connection, markets: &Vec<LiteMarket>) -> 
     }
 
     Ok(markets.len())
+}
+
+/// Attempts to convert row into a LiteMarket.
+/// If there's the wrong number of rows, we return an Err.
+/// Sort-of an inverse of bulk_insert_markets
+pub fn rusqlite_row_to_litemarket(row: &Row) -> Result<LiteMarket, RowParsingError> {
+    let outcome_str: String = row.get(9)?;
+    let mechanism_str: String = row.get(10)?;
+    let pool_str: String = row.get(12)?;
+
+    let outcome_type = serde_json::from_str::<MarketOutcomeType>(&outcome_str)?;
+    let mechanism = serde_json::from_str::<MarketMechanism>(&mechanism_str)?;
+    let pool = Some(serde_json::from_str::<HashMap<String, f64>>(&pool_str)?);
+
+    Ok(LiteMarket {
+        id: row.get(0)?,
+        creator_id: row.get(1)?,
+        creator_username: row.get(2)?,
+        creator_name: row.get(3)?,
+        creator_avatar_url: row.get(4)?,
+        close_time: row.get(5)?,
+        created_time: row.get(6)?,
+        question: row.get(7)?,
+        url: row.get(8)?,
+        outcome_type,
+        mechanism,
+        probability: row.get(11)?,
+        pool,
+        p: row.get(13)?,
+        total_liquidity: row.get(14)?,
+        value: row.get(15)?,
+        min: row.get(16)?,
+        max: row.get(17)?,
+        is_log_scale: row.get(18)?,
+        volume: row.get(19)?,
+        volume_24_hours: row.get(20)?,
+        is_resolved: row.get(21)?,
+        resolution_time: row.get(22)?,
+        resolution: row.get(23)?,
+        resolution_probability: row.get(24)?,
+        last_updated_time: row.get(25)?,
+        last_bet_time: row.get(26)?,
+    })
 }
 
 pub fn init_market_table(conn: &mut Connection) -> Result<usize> {

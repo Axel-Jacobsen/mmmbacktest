@@ -20,6 +20,7 @@ tbd ;)
 ''  = not implemented yet
 y   = implemented
 n   = not going to implement
+----------------------------
 
 n  GET  /v0/user/[username]
 n  GET  /v0/user/by-id/[id]

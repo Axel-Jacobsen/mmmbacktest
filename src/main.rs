@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
-use std::{env, sync::Arc};
+use std::env;
 use warp::http::StatusCode;
 use warp::Filter;
 
 mod data_types;
 mod db;
+
+use crate::db::db_common::{get_db_connection, setup_db};
 
 #[derive(Deserialize)]
 struct MarketQueryParams {
@@ -48,7 +50,7 @@ async fn main() {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let connection_pool = Arc::new(db::setup_db());
+    let connection_pool = setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
     let v0 = warp::path("v0");
@@ -68,10 +70,7 @@ async fn main() {
         .and(warp::path::end())
         .and(warp::query::<MarketQueryParams>())
         .map(move |mq: MarketQueryParams| {
-            let pool = connection_pool_clone.clone();
-            let conn = pool
-                .get()
-                .expect("failed to get db connection from the pool");
+            let conn = get_db_connection(connection_pool_clone.clone());
 
             let maybe_markets = db::get_markets_by_params(
                 &conn,
@@ -98,10 +97,7 @@ async fn main() {
         .and(warp::path::param())
         .and(warp::path::end())
         .map(move |market_id: String| {
-            let pool = connection_pool_clone.clone();
-            let conn = pool
-                .get()
-                .expect("failed to get db connection from the pool");
+            let conn = get_db_connection(connection_pool_clone.clone());
 
             let maybe_markets = db::get_markets_by_id(&conn, Some(market_id.as_str()));
 
@@ -129,10 +125,7 @@ async fn main() {
         .and(warp::path::end())
         .and(warp::query::<BetQueryParams>())
         .map(move |bq: BetQueryParams| {
-            let pool = connection_pool_clone.clone();
-            let conn = pool
-                .get()
-                .expect("failed to get db connection from the pool");
+            let conn = get_db_connection(connection_pool_clone.clone());
 
             let maybe_bets = db::get_bets_by_params(
                 &conn,

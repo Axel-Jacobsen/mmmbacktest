@@ -1,17 +1,14 @@
 mod bet_table;
-mod db_common;
+pub mod db_common;
 mod errors;
 mod market_table;
 
-use r2d2::Pool;
-use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection, Result};
 use serde_json::Value;
 
-use crate::db::bet_table::{init_bet_table, rusqlite_row_to_bet};
-use crate::db::db_common::get_db_connection;
+use crate::db::bet_table::rusqlite_row_to_bet;
 use crate::db::errors::RowParsingError;
-use crate::db::market_table::{init_market_table, rusqlite_row_to_litemarket};
+use crate::db::market_table::rusqlite_row_to_litemarket;
 
 /// Impls GET /v0/markets
 /// Note that we filter the column 'creator_id' by
@@ -230,16 +227,4 @@ pub fn get_bets_by_params(
         after,
         order,
     )
-}
-
-pub fn setup_db() -> Pool<SqliteConnectionManager> {
-    let connection_pool = get_db_connection().expect("failed to get db connection pool");
-    let mut conn = connection_pool
-        .get()
-        .expect("failed to get db connection from the pool");
-
-    init_market_table(&mut conn).expect("failed to init market table");
-    init_bet_table(&mut conn).expect("failed to init bet table");
-
-    connection_pool
 }

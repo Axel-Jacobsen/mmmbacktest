@@ -12,20 +12,23 @@ struct MarketQueryParams {
     sort: Option<String>,
     order: Option<String>,
     before: Option<String>,
+    #[serde(rename = "userId")]
     user_id: Option<String>,
     _group_id: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct BetQueryParams {
+    #[serde(rename = "userId")]
     user_id: Option<String>,
     username: Option<String>,
+    #[serde(rename = "contractId")]
     contract_id: Option<String>,
+    #[serde(rename = "contractSlug")]
     contract_slug: Option<String>,
     limit: Option<i64>,
     before: Option<String>,
     after: Option<String>,
-    kinds: Option<String>,
     order: Option<String>,
 }
 
@@ -140,7 +143,6 @@ async fn main() {
                 bq.limit,
                 bq.before.as_deref(),
                 bq.after.as_deref(),
-                bq.kinds.as_deref(),
                 bq.order.as_deref(),
             );
 

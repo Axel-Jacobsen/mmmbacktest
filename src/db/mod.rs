@@ -98,6 +98,29 @@ pub fn get_markets_by_id(
     get_markets(conn, id, None, None, None, None, None)
 }
 
+pub fn get_market_by_slug(conn: &Connection, slug: &str) -> Result<Vec<Value>, RowParsingError> {
+    let query = "SELECT * FROM markets WHERE url LIKE '%' || :slug || '%';";
+
+    let mut stmt = conn.prepare(query)?;
+
+    let market_iter = stmt.query_map(
+        named_params! {
+            ":slug": slug,
+        },
+        |row| Ok(rusqlite_row_to_litemarket(row)),
+    )?;
+
+    let mut markets: Vec<Value> = Vec::new();
+    for maybe_market in market_iter {
+        // ??!! haha
+        let market = maybe_market??;
+        let market_json = serde_json::to_value(market)?;
+        markets.push(market_json);
+    }
+
+    Ok(markets)
+}
+
 pub fn get_bets(
     conn: &Connection,
     user_id: Option<&str>,
@@ -107,18 +130,46 @@ pub fn get_bets(
     limit: Option<i64>,
     before: Option<&str>,
     after: Option<&str>,
-    kinds: Option<&str>,
     order: Option<&str>,
 ) -> Result<Vec<Value>, RowParsingError> {
+    if let Some(contract_slug) = contract_slug {
+        let markets = get_market_by_slug(conn, contract_slug)?;
+
+        if markets.is_empty() {
+            return Err(RowParsingError::MarketNotFound(
+                format!("could not find market with slug {contract_slug}").to_string(),
+            ));
+        } else if markets.len() > 1 {
+            return Err(RowParsingError::MarketNotFound(
+                format!("found multiple markets with slug {contract_slug}").to_string(),
+            ));
+        } else {
+            let market = markets.first().unwrap();
+            let market_id_from_slug = Some(market.get("id").unwrap().as_str().unwrap());
+
+            if contract_id.is_some() && contract_id != market_id_from_slug {
+                return Err(RowParsingError::MarketNotFound(
+                    "provided contract id does not match slug".to_string(),
+                ));
+            }
+            return get_bets_by_params(
+                conn,
+                user_id,
+                username,
+                market_id_from_slug,
+                None,
+                limit,
+                before,
+                after,
+                order,
+            );
+        }
+    }
+
     let order = match order {
         Some("desc") => "DESC",
         _ => "ASC",
     };
-
-    // TODO
-    // if contract_id or contract_slug are not None,
-    // then we need to join those columns on the market table
-    // and then query on that
 
     let query = format!(
         "SELECT * FROM bets
@@ -126,11 +177,9 @@ pub fn get_bets(
           (:user_id IS NULL OR user_id = :user_id) AND
           (:username IS NULL OR user_name = :username) AND
           (:contract_id IS NULL OR contract_id = :contract_id) AND
-          (:contract_slug IS NULL OR contract_slug = :contract_slug) AND
-          (:before IS NULL OR id < :before) AND  -- this isn't quite right
-          (:after IS NULL OR id > :after) AND    -- and neither is this
-          (:kinds IS NULL OR kinds = :kinds)
-        ORDER BY {order}
+          (:before IS NULL OR id < :before) AND
+          (:after IS NULL OR id > :after)
+        ORDER BY created_time {order}
         LIMIT :limit;"
     );
 
@@ -141,11 +190,9 @@ pub fn get_bets(
             ":user_id": user_id,
             ":username": username,
             ":contract_id": contract_id,
-            ":contract_slug": contract_slug,
             ":limit": limit.unwrap_or(500).min(1000),
             ":before": before,
             ":after": after,
-            ":kinds": kinds,
         },
         |row| Ok(rusqlite_row_to_bet(row)),
     )?;
@@ -170,7 +217,6 @@ pub fn get_bets_by_params(
     limit: Option<i64>,
     before: Option<&str>,
     after: Option<&str>,
-    kinds: Option<&str>,
     order: Option<&str>,
 ) -> Result<Vec<Value>, RowParsingError> {
     get_bets(
@@ -182,7 +228,6 @@ pub fn get_bets_by_params(
         limit,
         before,
         after,
-        kinds,
         order,
     )
 }

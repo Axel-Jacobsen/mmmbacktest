@@ -6,14 +6,16 @@ pub enum RowParsingError {
     Generic(String),
     RusqliteError(rusqlite::Error),
     SerdeError(serde_json::Error),
+    MarketNotFound(String),
 }
 
 impl fmt::Display for RowParsingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            RowParsingError::Generic(e) => write!(f, "APIGeneric error: {}", e),
+            RowParsingError::Generic(e) => write!(f, "Generic error: {}", e),
             RowParsingError::RusqliteError(e) => write!(f, "Rusqlite error: {}", e),
             RowParsingError::SerdeError(e) => write!(f, "Serde JSON error: {}", e),
+            RowParsingError::MarketNotFound(e) => write!(f, "Market Not Found error: {}", e),
         }
     }
 }

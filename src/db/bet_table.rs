@@ -153,9 +153,17 @@ pub fn rusqlite_row_to_bet(row: &Row) -> Result<Bet, RowParsingError> {
     let visibility_str: String = row.get(19)?;
     let limit_props_str: String = row.get(22)?;
 
-    let fees = Some(serde_json::from_str::<Fees>(&fees_str)?);
+    let fees = if fees_str == "null" {
+        None
+    } else {
+        Some(serde_json::from_str::<Fees>(&fees_str)?)
+    };
     let visibility = serde_json::from_str::<Visibility>(&visibility_str)?;
-    let limit_props_str = Some(serde_json::from_str::<LimitProps>(&limit_props_str)?);
+    let limit_props_str = if limit_props_str == "null" {
+        None
+    } else {
+        Some(serde_json::from_str::<LimitProps>(&limit_props_str)?)
+    };
 
     Ok(Bet {
         id: row.get(0)?,

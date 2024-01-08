@@ -1,6 +1,6 @@
-mod bet_table;
 pub mod db_common;
 mod errors;
+mod bet_table;
 mod market_table;
 
 use rusqlite::{named_params, Connection, Result};

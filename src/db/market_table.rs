@@ -182,5 +182,12 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
         debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
 
+    let start = std::time::Instant::now();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS markets_index ON markets (created_time);",
+        [],
+    )?;
+    debug!("created 'markets' index in {:?}", start.elapsed());
+
     Ok(count)
 }

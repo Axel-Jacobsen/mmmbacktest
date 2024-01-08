@@ -165,6 +165,7 @@ pub fn rusqlite_row_to_bet(row: &Row) -> Result<Bet, RowParsingError> {
         Some(serde_json::from_str::<LimitProps>(&limit_props_str)?)
     };
 
+    #[allow(deprecated)]
     Ok(Bet {
         id: row.get(0)?,
         user_id: row.get(1)?,
@@ -217,6 +218,13 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
         // TODO
         debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
+
+    let start = std::time::Instant::now();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS bets_index ON bets (created_time);",
+        [],
+    )?;
+    debug!("created 'bets' index in {:?}", start.elapsed());
 
     Ok(count)
 }

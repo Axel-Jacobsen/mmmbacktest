@@ -13,8 +13,8 @@ pub fn get_db_connection_pool() -> Result<Arc<Pool<SqliteConnectionManager>>, r2
 
 pub fn setup_db() -> Arc<Pool<SqliteConnectionManager>> {
     let connection_pool = get_db_connection_pool().expect("failed to get db connection pool");
-    let mut conn = get_db_connection(connection_pool.clone());
 
+    let mut conn = get_db_connection(connection_pool.clone());
     init_market_table(&mut conn).expect("failed to init market table");
     init_bet_table(&mut conn).expect("failed to init bet table");
 
@@ -36,7 +36,8 @@ pub fn get_db_connection(
         pragma mmap_size = 30000000000;";
 
     {
-        match conn.execute(query, []) {
+        let mut stmt = conn.prepare(query).expect("failed to prep stmt hm what");
+        match stmt.query([]) {
             Ok(_) => {}
             Err(e) => {
                 log::error!("failed to optimize db connection: {e}");

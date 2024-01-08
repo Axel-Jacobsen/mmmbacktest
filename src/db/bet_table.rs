@@ -153,10 +153,19 @@ pub fn rusqlite_row_to_bet(row: &Row) -> Result<Bet, RowParsingError> {
     let visibility_str: String = row.get(19)?;
     let limit_props_str: String = row.get(22)?;
 
-    let fees = Some(serde_json::from_str::<Fees>(&fees_str)?);
+    let fees = if fees_str == "null" {
+        None
+    } else {
+        Some(serde_json::from_str::<Fees>(&fees_str)?)
+    };
     let visibility = serde_json::from_str::<Visibility>(&visibility_str)?;
-    let limit_props_str = Some(serde_json::from_str::<LimitProps>(&limit_props_str)?);
+    let limit_props_str = if limit_props_str == "null" {
+        None
+    } else {
+        Some(serde_json::from_str::<LimitProps>(&limit_props_str)?)
+    };
 
+    #[allow(deprecated)]
     Ok(Bet {
         id: row.get(0)?,
         user_id: row.get(1)?,
@@ -173,12 +182,12 @@ pub fn rusqlite_row_to_bet(row: &Row) -> Result<Bet, RowParsingError> {
         shares_by_outcome: None,
         prob_before: row.get(12)?,
         prob_after: row.get(13)?,
-        fees: fees,
+        fees,
         is_api: row.get(15)?,
         is_ante: row.get(16)?,
         is_redemption: row.get(17)?,
         is_challenge: row.get(18)?,
-        visibility: visibility,
+        visibility,
         challenge_slug: row.get(20)?,
         reply_to_comment_id: row.get(21)?,
         limit_props: limit_props_str,
@@ -209,6 +218,13 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
         // TODO
         debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
+
+    let start = std::time::Instant::now();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS bets_index ON bets (created_time);",
+        [],
+    )?;
+    debug!("created 'bets' index in {:?}", start.elapsed());
 
     Ok(count)
 }

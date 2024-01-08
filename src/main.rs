@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
-use std::{env, sync::Arc};
+use std::env;
 use warp::http::StatusCode;
 use warp::Filter;
 
 mod data_types;
 mod db;
+
+use crate::db::db_common::{get_db_connection, setup_db};
 
 #[derive(Deserialize)]
 struct MarketQueryParams {
@@ -12,8 +14,24 @@ struct MarketQueryParams {
     sort: Option<String>,
     order: Option<String>,
     before: Option<String>,
+    #[serde(rename = "userId")]
     user_id: Option<String>,
     _group_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct BetQueryParams {
+    #[serde(rename = "userId")]
+    user_id: Option<String>,
+    username: Option<String>,
+    #[serde(rename = "contractId")]
+    contract_id: Option<String>,
+    #[serde(rename = "contractSlug")]
+    contract_slug: Option<String>,
+    limit: Option<i64>,
+    before: Option<String>,
+    after: Option<String>,
+    order: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -32,7 +50,7 @@ async fn main() {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let connection_pool = Arc::new(db::setup_db());
+    let connection_pool = setup_db();
 
     let root = warp::path::end().map(|| StatusCode::NOT_IMPLEMENTED);
     let v0 = warp::path("v0");
@@ -40,6 +58,11 @@ async fn main() {
         .and(warp::path::end())
         .map(|| StatusCode::NOT_IMPLEMENTED);
 
+    // MAJOR TODO
+    //
+    // Listing out all these endpoints is messy. I want to move the
+    // endpoint construction somewhere else. How do we do this?
+    //
     // we have to clone this pool twice? I bet I got something wrong
     let connection_pool_clone = connection_pool.clone();
     let markets_endpoint = v0
@@ -47,10 +70,7 @@ async fn main() {
         .and(warp::path::end())
         .and(warp::query::<MarketQueryParams>())
         .map(move |mq: MarketQueryParams| {
-            let pool = connection_pool_clone.clone();
-            let conn = pool
-                .get()
-                .expect("failed to get db connection from the pool");
+            let conn = get_db_connection(connection_pool_clone.clone());
 
             let maybe_markets = db::get_markets_by_params(
                 &conn,
@@ -72,15 +92,12 @@ async fn main() {
 
     // we return a LiteMarket instead of a FullMarket here :(
     let connection_pool_clone = connection_pool.clone();
-    let market_by_id = v0
+    let market_by_id_endpoint = v0
         .and(warp::path("markets"))
         .and(warp::path::param())
         .and(warp::path::end())
         .map(move |market_id: String| {
-            let pool = connection_pool_clone.clone();
-            let conn = pool
-                .get()
-                .expect("failed to get db connection from the pool");
+            let conn = get_db_connection(connection_pool_clone.clone());
 
             let maybe_markets = db::get_markets_by_id(&conn, Some(market_id.as_str()));
 
@@ -102,7 +119,40 @@ async fn main() {
             }
         });
 
-    let routes = root.or(base).or(markets_endpoint).or(market_by_id);
+    let connection_pool_clone = connection_pool.clone();
+    let bets_endpoint = v0
+        .and(warp::path("bets"))
+        .and(warp::path::end())
+        .and(warp::query::<BetQueryParams>())
+        .map(move |bq: BetQueryParams| {
+            let conn = get_db_connection(connection_pool_clone.clone());
+
+            let maybe_bets = db::get_bets_by_params(
+                &conn,
+                bq.user_id.as_deref(),
+                bq.username.as_deref(),
+                bq.contract_id.as_deref(),
+                bq.contract_slug.as_deref(),
+                bq.limit,
+                bq.before.as_deref(),
+                bq.after.as_deref(),
+                bq.order.as_deref(),
+            );
+
+            match maybe_bets {
+                Ok(bets) => {
+                    log::info!("returning {} bets", bets.len());
+                    warp::reply::json(&bets)
+                }
+                Err(e) => ret_http_error(400, e.to_string()),
+            }
+        });
+
+    let routes = root
+        .or(base)
+        .or(markets_endpoint)
+        .or(market_by_id_endpoint)
+        .or(bets_endpoint);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

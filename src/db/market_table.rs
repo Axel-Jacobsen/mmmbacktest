@@ -161,7 +161,8 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
 
     // TODO really we should check that the number of rows equals the number of bets,
     // or maybe just check if all the ids are in the db and insert the missing ones?
-    let num_rows = db_common::count_rows(conn, "markets").expect("failed to count rows in markets table");
+    let num_rows =
+        db_common::count_rows(conn, "markets").expect("failed to count rows in markets table");
     if db_common::count_rows(conn, "markets").expect("failed to count rows in markets table") == 0 {
         debug!("inserting markets...");
 
@@ -180,6 +181,13 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
         // TODO
         debug!("there are {num_rows} (instead of 0) rows, so not inserting anything");
     }
+
+    let start = std::time::Instant::now();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS markets_index ON markets (created_time);",
+        [],
+    )?;
+    debug!("created 'markets' index in {:?}", start.elapsed());
 
     Ok(count)
 }

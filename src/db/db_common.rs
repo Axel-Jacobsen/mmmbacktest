@@ -1,10 +1,51 @@
-use r2d2::Pool;
+use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, Connection};
+use std::sync::Arc;
 
-pub fn get_db_connection() -> Result<Pool<SqliteConnectionManager>, r2d2::Error> {
+use crate::db::bet_table::init_bet_table;
+use crate::db::market_table::init_market_table;
+
+pub fn get_db_connection_pool() -> Result<Arc<Pool<SqliteConnectionManager>>, r2d2::Error> {
     let manager = SqliteConnectionManager::file("mmmbacktest.db");
-    r2d2::Pool::new(manager)
+    Ok(Arc::new(r2d2::Pool::new(manager)?))
+}
+
+pub fn setup_db() -> Arc<Pool<SqliteConnectionManager>> {
+    let connection_pool = get_db_connection_pool().expect("failed to get db connection pool");
+
+    let mut conn = get_db_connection(connection_pool.clone());
+    init_market_table(&mut conn).expect("failed to init market table");
+    init_bet_table(&mut conn).expect("failed to init bet table");
+
+    connection_pool
+}
+
+pub fn get_db_connection(
+    connection_pool: Arc<Pool<SqliteConnectionManager>>,
+) -> PooledConnection<SqliteConnectionManager> {
+    let conn = connection_pool
+        .get()
+        .expect("failed to get db connection from the pool");
+
+    // https://phiresky.github.io/blog/2020/sqlite-performance-tuning/
+    let query = "
+        pragma journal_mode = WAL;
+        pragma synchronous = normal;
+        pragma temp_store = memory;
+        pragma mmap_size = 30000000000;";
+
+    {
+        let mut stmt = conn.prepare(query).expect("failed to prep stmt hm what");
+        match stmt.query([]) {
+            Ok(_) => {}
+            Err(e) => {
+                log::error!("failed to optimize db connection: {e}");
+            }
+        };
+    }
+
+    conn
 }
 
 pub fn table_exists(conn: &Connection, table_name: &str) -> rusqlite::Result<bool> {

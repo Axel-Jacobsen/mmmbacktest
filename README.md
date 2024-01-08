@@ -22,9 +22,9 @@ y   = implemented
 n   = not going to implement
 ----------------------------
 
-n  GET  /v0/user/[username]                         // we have no user data
-n  GET  /v0/user/by-id/[id]
-n  GET  /v0/me
+   GET  /v0/user/[username]                         // we have no user data
+   GET  /v0/user/by-id/[id]
+   GET  /v0/me
 n  GET  /v0/user/[username]/bets (Deprecated)
 n  GET  /v0/groups                                  // we have no group data
 n  GET  /v0/group/[slug]
@@ -33,7 +33,7 @@ n  GET  /v0/group/by-id/[id]/markets (Deprecated)
 Y  GET  /v0/markets
 Y  GET  /v0/market/[marketId]                       // returns a LiteMarket instead of a FullMarket, since the backtest data includes LiteMarkets only
 n  GET  /v0/market/[marketId]/positions             // returns type ContractMetrics, which we don't have
-y  GET  /v0/slug/[marketSlug]
+Y  GET  /v0/slug/[marketSlug]
    GET  /v0/search-markets
 n  GET  /v0/users
    POST /v0/bet
@@ -50,7 +50,7 @@ n  POST /v0/market/[marketId]/resolve
    POST /v0/sell-shares-dpm
 n  POST /v0/comment
 n  GET  /v0/comments
-y  GET  /v0/bets
+Y  GET  /v0/bets
 n  GET  /v0/managrams
 n  POST /v0/managram
 n  GET  /v0/leagues

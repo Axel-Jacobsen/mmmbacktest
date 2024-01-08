@@ -187,7 +187,10 @@ pub fn init_market_table(conn: &mut Connection) -> Result<usize> {
         "CREATE INDEX IF NOT EXISTS markets_index ON markets (created_time);",
         [],
     )?;
-    debug!("created 'markets' index in {:?}", start.elapsed());
+    debug!(
+        "'markets' index created (or found) in {:?}",
+        start.elapsed()
+    );
 
     Ok(count)
 }

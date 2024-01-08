@@ -3,8 +3,7 @@ use log::debug;
 use rusqlite::{params, Connection, Result, Row};
 use std::fs;
 
-use crate::data_types::Bet;
-use crate::data_types::{Fees, LimitProps, Visibility};
+use crate::data_types::{Bet, Fees, LimitProps, Visibility};
 use crate::db::db_common;
 use crate::db::errors::RowParsingError;
 
@@ -224,7 +223,7 @@ pub fn init_bet_table(conn: &mut Connection) -> Result<usize> {
         "CREATE INDEX IF NOT EXISTS bets_index ON bets (created_time);",
         [],
     )?;
-    debug!("created 'bets' index in {:?}", start.elapsed());
+    debug!("'bets' index created (or found) in {:?}", start.elapsed());
 
     Ok(count)
 }

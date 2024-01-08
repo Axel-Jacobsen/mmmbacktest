@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::env;
-use warp::http::StatusCode;
-use warp::Filter;
+use warp::{http::StatusCode, Filter};
 
 mod data_types;
 mod db;
@@ -34,7 +33,7 @@ struct BetQueryParams {
     order: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct HttpError {
     code: u16,
     message: String,
@@ -160,6 +159,8 @@ async fn main() {
 
             let markets = match maybe_markets {
                 Ok(markets) => markets,
+                // TODO probably should not give the error string to the user
+                // bad security practice?
                 Err(e) => return ret_http_error(400, e.to_string()),
             };
 
@@ -173,12 +174,28 @@ async fn main() {
             }
         });
 
+    let connection_pool_clone = connection_pool.clone();
+    let me_endpoint = v0
+        .and(warp::path("me"))
+        .and(warp::path::end())
+        .map(move || {
+            let conn = get_db_connection(connection_pool_clone.clone());
+
+            let me = db::get_me(&conn);
+
+            match me {
+                Ok(me) => warp::reply::json(&me),
+                Err(_) => ret_http_error(400, "couldn't return user".to_string()),
+            }
+        });
+
     let routes = root
         .or(base)
         .or(markets_endpoint)
         .or(market_by_id_endpoint)
         .or(bets_endpoint)
-        .or(market_by_slug_endpoint);
+        .or(market_by_slug_endpoint)
+        .or(me_endpoint);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

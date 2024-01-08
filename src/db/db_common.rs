@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use crate::db::bet_table::init_bet_table;
 use crate::db::market_table::init_market_table;
+use crate::db::user_table::init_user_table;
 
 pub fn get_db_connection_pool() -> Result<Arc<Pool<SqliteConnectionManager>>, r2d2::Error> {
     let manager = SqliteConnectionManager::file("mmmbacktest.db");
@@ -17,6 +18,7 @@ pub fn setup_db() -> Arc<Pool<SqliteConnectionManager>> {
     let mut conn = get_db_connection(connection_pool.clone());
     init_market_table(&mut conn).expect("failed to init market table");
     init_bet_table(&mut conn).expect("failed to init bet table");
+    init_user_table(&mut conn).expect("failed to init user table");
 
     connection_pool
 }

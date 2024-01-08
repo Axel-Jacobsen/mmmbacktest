@@ -5,7 +5,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-enum TimePeriod {
+pub enum TimePeriod {
     #[serde(rename = "daily")]
     Daily,
     #[serde(rename = "weekly")]
@@ -82,59 +82,59 @@ pub struct User {
     pub id: String,
 
     #[serde(rename = "createdTime")]
-    created_time: u64,
+    pub created_time: u64,
 
     pub name: String,
-    username: String,
+    pub username: String,
 
-    url: Option<String>,
+    pub url: Option<String>,
 
     #[serde(rename = "avatarUrl")]
-    avatar_url: String,
+    pub avatar_url: String,
 
-    bio: Option<String>,
+    pub bio: Option<String>,
 
     #[serde(rename = "bannerUrl")]
-    banner_url: Option<String>,
+    pub banner_url: Option<String>,
 
-    website: Option<String>,
+    pub website: Option<String>,
 
     #[serde(rename = "twitterHandle")]
-    twitter_handle: Option<String>,
+    pub twitter_handle: Option<String>,
 
     #[serde(rename = "discordHandle")]
-    discord_handle: Option<String>,
+    pub discord_handle: Option<String>,
 
     #[serde(rename = "isBot")]
-    is_bot: Option<bool>,
+    pub is_bot: Option<bool>,
 
     /// is in manifold team
     #[serde(rename = "isAdmin")]
-    is_admin: Option<bool>,
+    pub is_admin: Option<bool>,
 
     /// is trustworthy
     #[serde(rename = "isTrustworthy")]
-    is_trustworthy: Option<bool>,
+    pub is_trustworthy: Option<bool>,
 
     #[serde(rename = "isBannedFromPosting")]
-    is_banned_from_posting: Option<bool>,
+    pub is_banned_from_posting: Option<bool>,
 
     #[serde(rename = "userDeleted")]
-    user_deleted: Option<bool>,
+    pub user_deleted: Option<bool>,
 
     pub balance: f64,
 
     #[serde(rename = "totalDeposits")]
-    total_deposits: f64,
+    pub total_deposits: f64,
 
     #[serde(rename = "lastBetTime")]
-    last_bet_time: Option<u64>,
+    pub last_bet_time: Option<u64>,
 
     #[serde(rename = "currentBettingStreak")]
-    current_betting_streak: Option<u64>, // guessing here
+    pub current_betting_streak: Option<u64>, // guessing here
 
     #[serde(rename = "profitCached")]
-    profit_cached: HashMap<TimePeriod, f64>,
+    pub profit_cached: HashMap<TimePeriod, f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

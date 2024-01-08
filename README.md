@@ -38,14 +38,14 @@ y  GET  /v0/slug/[marketSlug]
 n  GET  /v0/users
    POST /v0/bet
    POST /v0/bet/cancel/[id]
-   POST /v0/market
-   POST /v0/market/[marketId]/answer
-   POST /v0/market/[marketId]/add-liquidity
-   POST /v0/market/[marketId]/add-bounty
-   POST /v0/market/[marketId]/award-bounty
-   POST /v0/market/[marketId]/close
-   POST /v0/market/[marketId]/group
-   POST /v0/market/[marketId]/resolve
+n  POST /v0/market
+n  POST /v0/market/[marketId]/answer
+n  POST /v0/market/[marketId]/add-liquidity
+n  POST /v0/market/[marketId]/add-bounty
+n  POST /v0/market/[marketId]/award-bounty
+n  POST /v0/market/[marketId]/close
+n  POST /v0/market/[marketId]/group
+n  POST /v0/market/[marketId]/resolve
    POST /v0/market/[marketId]/sell
    POST /v0/sell-shares-dpm
 n  POST /v0/comment

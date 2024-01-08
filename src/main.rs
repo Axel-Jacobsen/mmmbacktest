@@ -148,11 +148,37 @@ async fn main() {
             }
         });
 
+    let connection_pool_clone = connection_pool.clone();
+    let market_by_slug_endpoint = v0
+        .and(warp::path("slug"))
+        .and(warp::path::param())
+        .and(warp::path::end())
+        .map(move |slug: String| {
+            let conn = get_db_connection(connection_pool_clone.clone());
+
+            let maybe_markets = db::get_market_by_slug(&conn, slug.as_str());
+
+            let markets = match maybe_markets {
+                Ok(markets) => markets,
+                Err(e) => return ret_http_error(400, e.to_string()),
+            };
+
+            if markets.is_empty() {
+                ret_http_error(400, format!("no markets found for slug {slug}"))
+            } else if markets.len() > 1 {
+                ret_http_error(400, format!("more than one market found for slug {slug}"))
+            } else {
+                log::info!("returning market with slug {slug}");
+                warp::reply::json(&markets[0])
+            }
+        });
+
     let routes = root
         .or(base)
         .or(markets_endpoint)
         .or(market_by_id_endpoint)
-        .or(bets_endpoint);
+        .or(bets_endpoint)
+        .or(market_by_slug_endpoint);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

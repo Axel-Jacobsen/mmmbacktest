@@ -33,7 +33,7 @@ n  GET  /v0/group/by-id/[id]/markets (Deprecated)
 Y  GET  /v0/markets
 Y  GET  /v0/market/[marketId]                       // returns a LiteMarket instead of a FullMarket, since the backtest data includes LiteMarkets only
 n  GET  /v0/market/[marketId]/positions             // returns type ContractMetrics, which we don't have
-   GET  /v0/slug/[marketSlug]
+y  GET  /v0/slug/[marketSlug]
    GET  /v0/search-markets
 n  GET  /v0/users
    POST /v0/bet

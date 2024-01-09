@@ -46,7 +46,7 @@ fn ret_http_error(code: u16, message: String) -> warp::reply::Json {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "debug");
+    env::set_var("RUST_LOG", "debug,hyper=info");
     env_logger::init();
 
     let connection_pool = setup_db();
